@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>vef-video demo page</title>
+	<script src="../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+	<link rel="import" href="../../bower_components/paper-styles/typography.html">
+	<link rel="import" href="../../bower_components/paper-styles/color.html">
+	<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+	<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+	<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+	<link rel="import" href="./vef-videoplayer.html">
+	<link rel="import" href="./vef-videostreamer.html">
+</head>
+
+<body>
+	<style is="custom-style">
+	    .paper-font-display1 {
+	        font-weight: 300 !important;
+	        color: teal;
+	        margin: 20px;
+	        @apply(--paper-font-display1);
+	    }
+	    .paper-font-headline {
+	        @apply(--paper-font-headline);
+	    }
+	    .paper-font-title {
+	        @apply(--paper-font-title);
+	    }
+	    .paper-font-subhead {
+	        @apply(--paper-font-subhead);
+	    }
+	    .paper-font-button {
+	        @apply(--paper-font-button);
+	        color: teal;
+	    }
+
+	    paper-material {
+	    	min-height: 300px;
+	    	position: relative;
+	    	padding: 10px;
+	    	margin: 10px 0;
+	    	text-align: center;
+	    }
+		/** TODO, find a way to pass class styles onto child elements (shadowdom bypass) **/
+		vef-videostreamer.custom, 
+		vef-videoplayer.custom {
+            --vef-videoplayer-controls-background: #101117;
+            --vef-videoplayer-controls-color: #fff;
+            --vef-videoplayer-accent-color: #ff1b43;
+        }
+
+	    .code-area pre {
+	    	position: relative;
+    		left: 135px;
+    		text-align: left;
+	    }
+		span.info {
+			font-size: 12px;
+			color: #aaa;
+		}
+	</style>
+
+<div class="paper-font-display1">&#x3C;vef-videoplayer&#x3E; <span class="info">Forked (unoffical) from <a href="https://github.com/AKHXtern/paper-video" target="_blank">paper-video</a>.</span></div>
+
+<paper-material elevation="1">
+	<div class="paper-font-button">example implementation</div>
+	<div class="code-area">
+		<pre>
+				&#x3C;style is=&#x22;custom-style&#x22;&#x3E;
+				&#x9;vef-videoplayer.custom {
+				&#x9;&#x9;/** used colorscheme **/
+				&#x9;&#x9;--vef-videoplayer-controls-background: #101117;
+				&#x9;&#x9;--vef-videoplayer-controls-color: #fff;
+				&#x9;&#x9;--vef-videoplayer-accent-color: #ff1b43;
+				&#x9;}
+				&#x3C;/style&#x3E;
+
+				&#x3C;!-- (dekstop) prefered width 900, prefered height 'auto' <span class="info">(default)</span> --&#x3E;
+
+				&#x3C;vef-videoplayer class=&#x22;custom&#x22; src=&#x22;./demo.mp4&#x22; width=&#x22;900&#x22; height=&#x22;auto&#x22;&#x3E;&#x3C;/vef-videoplayer&#x3E;&#x9;
+			</pre>
+	</div>
+
+	<vef-videoplayer class="custom" src="./demo.mp4" width="900"></vef-videoplayer>
+</paper-material>
+
+<div class="paper-font-display1">&#x3C;vef-videostreamer&#x3E;</div>
+
+<paper-material elevation="1">
+	<div class="paper-font-button">example implementation</div>
+	<div class="code-area">
+		<pre>
+			<!-- TODO: pass style to inner polymer element (is this even possible?) -->
+
+			&#x3C;!-- requires PEERJS (recommend firefox40+ fix) --&#x3E;
+			&#x3C;!-- option to broadcast or to listen to a stream --&#x3E;
+
+			&#x3C;!-- create a broadcaster element --&#x3E;
+			&#x3C;vef-videostreamer <!-- TODO: player-class=&#x22;custom&#x22;--> recorder&#x3E;&#x3C;/vef-videostreamer&#x3E;&#x9;
+		</pre>
+	</div>
+
+	<vef-videostreamer id="streamer" width="900" recorder></vef-videostreamer>
+	<p>
+		<paper-icon-button id="peer" onclick="window.open(`./connect.php?id=${document.getElementById('streamer').getClientId()}`, '_blank').focus();" icon="perm-phone-msg">call</paper-icon-button>
+	</p>
+
+<!--<vef-vide class="custom" src="demo.mp4" width="900" height"506.25"></vef-videoplayer>-->
+</paper-material>
+</body>
+
+</html>

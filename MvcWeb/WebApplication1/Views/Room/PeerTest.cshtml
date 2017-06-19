@@ -1,0 +1,32 @@
+﻿@model MvcWeb.ViewModels.StreamViewModel
+
+<link rel="import" href="~/Content/custom_components/vef-video/vef-videostreamer.html" />
+
+<link rel="import" href="~/Content/bower_components/iron-icons/iron-icons.html" />
+
+<link rel="import" href="~/Content/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="~/Content/bower_components/paper-progress/paper-progress.html" />
+<link rel="import" href="~/Content/bower_components/paper-slider/paper-slider.html" />
+
+@section Imports {
+    <link rel="stylesheet" href="~/Content/layout.css" />
+
+    <style is="custom-style">
+        vef-videostreamer.custom {
+            --vef-videostreamer-controls-background: black;
+            --vef-videostreamer-controls-color: #fff;
+            --vef-videostreamer-accent-color: #ff1b43;
+        }
+    </style>
+}@*end*@
+
+<div class="wrap">
+    <main class="main">
+        <div class="sidebar">
+            <header>peer parent id: @Model.PeerId</header>
+        </div>
+        <div class="content">
+            <vef-videostreamer id="streamer" class="custom" peer-id="@Model.PeerId"></vef-videostreamer>
+        </div>
+    </main>
+</div>

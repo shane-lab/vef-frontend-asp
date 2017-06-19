@@ -1,0 +1,356 @@
+<!--
+@author Shane van den Bogaard (<a href="mailto:info@shanelab.nl">info@shanelab.nl</a>)
+
+**********
+*
+*   *** VEF VIDEOPLAYER ***
+*   
+*   This video player is used to broadcast live webcam feed, as wel as playing previously
+*   recorded sources 
+*
+*   This Polymer-element is forked from <a href="https://github.com/AKHXtern/paper-video" target="_blank"> Arshak Khachatrian - Paper Video</a>
+*
+********** -->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/av-icons.html">
+<dom-module id="vef-videoplayer">
+	<style is="custom-style">
+		:host {
+			--vef-videoplayer-controls-background: white;
+			--vef-videoplayer-controls-color: #595959;
+			--vef-videoplayer-accent-color: #3367D6;
+		}
+		:host paper-ripple {
+			color: #fff;
+			opacity: 0.3;
+		}
+		:host paper-icon-button:hover {
+			/*--paper-icon-button-ink-color: var(--vef-videoplayer-accent-color)*/
+			color: var(--vef-videoplayer-accent-color)
+		}
+		:host paper-slider {
+			--paper-slider-active-color: var(--vef-videoplayer-accent-color);
+			--paper-slider-knob-color: var(--vef-videoplayer-accent-color);
+		}
+		:host .container {
+			position: relative;
+			display: inline-block;
+		}
+		:host #videoControls {
+			position: absolute;
+			bottom: 4px;
+			left: 0;
+			right: 0;
+			display: flex;
+			color: var(--vef-videoplayer-controls-color);
+			background-color: var(--vef-videoplayer-controls-background);
+			padding: 15px;
+			align-items: center;
+		}
+		:host #durationSlider {
+			flex: 1;
+		}
+		:host #volumeSlider {
+			max-width: 120px;
+		}
+		:host .video-time {
+		    font-family: 'Roboto';
+    		font-size: 12px;
+		}
+        .video-time span.live::before {
+            content: '';
+            display: inline-flex;
+            width: 6px;
+            height: 6px;
+            vertical-align: 4%;
+            margin: 0 5px;
+            border-radius: 6px;
+            background: var(--vef-videoplayer-accent-color);
+            
+        }
+		/** 
+		 * TODO fix firefox fullscreen, 
+		 * when adding the css selector below, chrome does no longer work in fullscreen either (!?) 
+		 */
+		/*:host #container:-moz-full-screen,
+		:host #container:-moz-full-screen video, */
+		:host #container:-webkit-full-screen,
+		:host #container:-webkit-full-screen video {
+		  width: 100vw;
+		  height: 100vh;
+		}
+		:host video {
+			background-color: black;
+		}
+	</style>
+<template>
+	<div id="container" class="container">
+		<paper-ripple></paper-ripple>
+		<div class="video">
+			<video on-tap="togglePlay" id="paperVideo" width$="{{width}}" height$="{{height}}" muted$="{{muted}}" poster$="{{poster}}" preload$="{{preload}}"
+				src$="{{src}}" autoplay$="{{autoplay}}">
+			</video>
+		</div>
+		<paper-material elevation="1" id="videoControls">
+			<paper-icon-button id="playPauseIcon" on-tap="togglePlay" icon="av:play-arrow"></paper-icon-button>
+			<span class="video-time">{{currentTick}}/<span id="duration">{{durationTick}}</span></span>
+			<paper-slider id="durationSlider" value="{{videoTimeline}}"></paper-slider>
+            <div id="audioControls" style="display: inline-flex">
+                <paper-icon-button id="toggleMute" icon="av:volume-up"></paper-icon-button>
+                <paper-slider id="volumeSlider" value="{{videoVolume}}"></paper-slider>
+            </div>
+			<paper-icon-button id="fullScreen" icon="icons:fullscreen"></paper-icon-button>
+		</paper-material>
+	</div>
+</template>
+<script>
+		var onplaying = true;
+		var onpause = false;
+		
+		Polymer({
+			is: 'vef-videoplayer',
+			properties: {
+				controls: {
+					type: Boolean,
+					value: false
+				},
+				autoplay: {
+					type: Boolean,
+					value: false
+				},
+				preload: {
+					type: Boolean,
+					value: false
+				},
+				muted: {
+					type: Boolean,
+					value: false
+				},
+				videoVolume: {
+					value: 100
+				}
+			},
+			attached: function () {
+				var that = this,
+					video = that.$.paperVideo;
+
+				video.addEventListener('canplay', function () {
+					that.currentTick = that.readableDuration(video.currentTime);
+					var duration = that.readableDuration(video.duration);
+
+					if (duration === 'stream') {
+					    $(that.$.duration).addClass('live');
+					    duration = (video.paused ? 'paused' : 'live').toUpperCase();
+					}
+
+					that.durationTick = duration;
+				});
+
+				video.addEventListener('timeupdate', function () {
+					that.$.playPauseIcon.setAttribute('icon', `av:${video.paused || video.ended ? 'play-arrow' : 'pause'}`);
+
+					that.currentTick = that.readableDuration(video.currentTime);
+
+					// setting the video parameters to the component
+					that.duration = video.duration;
+					that.currentTime = video.currentTime;
+
+					var duration = that.readableDuration(video.duration);
+
+					that.videoTimeline = duration === 'stream' ? 100 : (video.currentTime / video.duration) * 100;
+				});
+
+				that.$.durationSlider.addEventListener('change', function (e) {
+				    var duration = that.readableDuration(video.duration);
+					if (!that.hasSource() || duration === '/') {
+						that.$.durationSlider.value = 0;
+						return;
+					}
+
+					if (duration === 'stream') {
+					    that.$.durationSlider.value = 100;
+					    return;
+					}
+
+					video.currentTime = Math.floor(video.duration * e.target.getAttribute('value') / 100);
+				});
+
+				that.$.volumeSlider.addEventListener('change', function (e) {
+					video.volume = that.videoVolume / 100;
+
+					that.$.toggleMute.setAttribute('icon', `av:volume-${video.volume ? 'up' : 'off'}`)
+				});
+
+				var volume; // remember previous value before muting
+				that.$.toggleMute.addEventListener('click', function (e) {
+
+					if (that.videoVolume) {
+						volume = that.videoVolume;
+						video.volume = that.videoVolume = 0;
+					} else {
+						volume && (video.volume = volume / 100);
+						volume && (that.videoVolume = volume)
+					}
+
+					that.$.volumeSlider.fire('change');
+				});
+
+				// TODO fix firefox impl
+				that.$.fullScreen.addEventListener('click', function () {
+					that.toggleFullScreen(that.$.container);
+				});
+
+				// fixes concurrent (promises callback)
+				video.onplaying = function () {
+					onplaying = true;
+					onpause = false;
+				};
+				video.onpause = function () {
+					onplaying = false;
+					onpause = true;
+				};
+				video.onloadedmetadata = function() {
+					if (that.autoplay) {
+						that.play();
+					}
+				};
+			},
+			readableDuration: function (seconds) {
+			    var video = this.$.paperVideo;
+
+			    if (!this.hasSource() || 
+                    (seconds === undefined || seconds == null)) {
+					return '/';
+			    }
+
+			    if (seconds.toString().toLowerCase().trim() === 'infinity') {
+			        return 'stream';
+			    }
+
+				sec = Math.floor(seconds);
+				min = Math.floor(sec / 60);
+				min = min >= 10 ? min : `0${min}`;
+				sec = Math.floor(sec % 60);
+				sec = sec >= 10 ? sec : `0${sec}`;
+
+				return `${min}:${sec}`;
+			},
+			hasSource: function () {
+				var video = this.$.paperVideo;
+
+				return video !== undefined && video != null &&
+					video.src !== undefined && video.src != null &&
+					video.src.trim() !== "";
+
+				// return !(video !== undefined && video != null &&
+				// 	(video.src === undefined || video.src == null ||
+				// 	(video.src != null && video.src.trim() === "")));
+			},
+			play: function () {
+				if (!this.hasSource()) {
+					return;
+				}
+				var video = this.$.paperVideo;
+
+				if (video.paused) {
+					if (!onplaying) {
+						video.play();
+					}
+				}
+			},
+			pause: function () {
+				if (!this.hasSource()) {
+					return;
+				}
+
+				var video = this.$.paperVideo;
+
+				if (!video.paused) {
+					if (!onpause) {
+						video.pause();
+					}
+				}
+			},
+			togglePlay: function (e) {
+				var that = this,
+					video = that.$.paperVideo;
+
+				if (video.paused || video.ended) {
+					that.play();
+				} else {
+					that.pause();
+				}
+			},
+			toggleControls: function () {
+			    var controls = this.$.videoControls;
+
+			    if (controls) {
+			        if (!this.controls) {
+			            $(controls).hide();
+			        } else {
+			            $(controls).show();
+			        }
+
+			        this.controls = !this.controls;
+			    }
+			},
+			toggleAudioControls: function (flag) {
+			    var controls = this.$.audioControls,
+			        video = this.$.paperVideo;
+
+			    if (controls) {
+			        if (!this.muted) {
+			            $(controls).hide();
+			        } else {
+			            $(controls).show();
+			        }
+
+			        this.muted = !this.muted;
+			    }
+
+                // handle mute audio
+			    if (flag) {
+			        if (this.videoVolume) {
+			            volume = this.videoVolume;
+			            video.volume = this.videoVolume = 0;
+			        } else {
+			            volume && (video.volume = volume / 100);
+			            volume && (this.videoVolume = volume)
+			        }
+			    }
+			},
+			toggleFullScreen: function (elem) {
+				elem = elem || document.documentElement;
+				if (!document.fullscreenElement && !document.mozFullScreenElement &&
+					!document.webkitFullscreenElement && !document.msFullscreenElement) {
+					if (elem.requestFullscreen) {
+						elem.requestFullscreen();
+					} else if (elem.msRequestFullscreen) {
+						elem.msRequestFullscreen();
+					} else if (elem.mozRequestFullScreen) {
+						elem.mozRequestFullScreen();
+					} else if (elem.webkitRequestFullscreen) {
+						elem.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+					}
+				} else {
+					if (document.exitFullscreen) {
+						document.exitFullscreen();
+					} else if (document.msExitFullscreen) {
+						document.msExitFullscreen();
+					} else if (document.mozCancelFullScreen) {
+						document.mozCancelFullScreen();
+					} else if (document.webkitExitFullscreen) {
+						document.webkitExitFullscreen();
+					}
+				}
+			}
+		});
+    
+	</script>
+</dom-module>

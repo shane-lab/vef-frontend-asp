@@ -1,0 +1,160 @@
+<!--
+@author Shane van den Bogaard (<a href="mailto:info@shanelab.nl">info@shanelab.nl</a>)
+
+**********
+*
+*   *** VEF-VIDEOSTREAMER ***
+*   
+*   This element handles PEER-TO-PEER connection to stream live camera feed to other clients
+*   This video element is a custom Polymer-element used to play the live feed or any other previously recorded sources 
+*
+*   This videoplayer Polymer-element is located at <a href="./vef-videoplayer.html" target="_blank">VEF-VIDEOPLAYER</a>
+*
+********** -->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html" />
+
+<link rel="import" href="./vef-videoplayer.html" />
+
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html" />
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="../../bower_components/paper-button/paper-button.html" />
+
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html" />
+<dom-module id="vef-videostreamer">
+	<style is="custom-style">
+		:host {
+			--vef-videostreamer-controls-background: white;
+			--vef-videostreamer-controls-color: #595959;
+			--vef-videostreamer-accent-color: #3367D6;
+		}
+
+		vef-videoplayer {
+			--vef-videoplayer-controls-background: var(--vef-videostreamer-controls-background);
+			--vef-videoplayer-controls-color: var(--vef-videostreamer-controls-color);
+			--vef-videoplayer-accent-color: var(--vef-videostreamer-accent-color);
+		}
+
+        :host paper-icon-button {
+            color: #fff;
+        }
+        
+		:host paper-icon-button:hover {
+			color: var(--vef-videostreamer-accent-color);
+		}
+	</style>
+	<template>
+		<vef-videoplayer id="player" class$="{{playerClass}}" width$="{{width}}" height$="{{height}}" src$="{{null}}" fluid$="{{fluid}}" autoplay>
+		</vef-videoplayer>
+        <paper-icon-button id="connect" on-tap="connect" icon="av:videocam"></paper-icon-button>
+	</template>
+    <script src="./peer.js"></script>
+	<script>
+		var clientId;
+		Polymer({
+			is: 'vef-videostreamer',
+			properties: {
+				width: {
+					value: 900
+				},
+				height: {
+					value: "auto"
+				},
+				playerClass: {
+					type: String,
+					value: ''
+				},
+				recorder: {
+					type: Boolean,
+					value: false
+				},
+				peerId: {
+					type: String,
+					value: ''
+				}
+			},
+			attached: function () {
+			    var that = this,
+					player = that.$.player,
+                    connect = that.$.connect;
+
+                //player.toggleVideoContr
+			    // return;
+
+				let peer = new Peer({
+					// host: '145.93.136.175',
+					host: '192.168.27.143',
+					port: 8080,
+					path: '/streaming',
+					debug: 0,
+					config: {
+						iceServers: [{
+							urls: 'stun:stun1.1.google.com:19302'
+						}]
+					}
+				});
+
+				peer.on('open', function (id) {
+					if (that.recorder) {
+						if (navigator.mediaDevices === undefined) {
+							navigator.mediaDevices = {};
+						}
+
+						// append to the user's connected devices found by the browser
+						if (navigator.mediaDevices.getUserMedia === undefined) {
+							navigator.mediaDevices.getUserMedia = getUserMedia;
+						}
+
+						navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+							.then(function (handle) {
+							    window.localStream = handle;
+
+							    console.log(handle);
+
+							    player.src = window.URL.createObjectURL(handle);
+
+							    player.toggleAudioControls(true);
+							});
+
+						peer.on('connection', function (conn) {
+							console.log('on connect');
+							// make a call to the connected peer
+							var call = peer.call(conn.peer, window.localStream);
+							// call.on('stream', function (stream) {
+							// 	console.log('incoming stream');
+							// });
+						});
+					} else {
+						// connect to peer
+						var peerId = that.peerId;
+
+						var connection = peer.connect(peerId, {
+							metadata: {
+								'username': name
+							}
+						});
+
+						peer.on('call', function (call) {
+							console.log('on call')
+							call.answer(undefined); // just have to answer the call
+							call.on('stream', function (stream) {
+								player.src = window.URL.createObjectURL(stream);
+								player.play();
+							});
+						});
+					}
+
+					clientId = id;
+
+					console.log(`clientId:${id}`);
+				});
+			},
+			connect: function() {
+
+			},
+			getClientId: function () {
+				return clientId || -1;
+			}
+		});
+	</script>
+</dom-module>

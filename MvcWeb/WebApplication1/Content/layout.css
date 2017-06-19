@@ -1,0 +1,34 @@
+﻿.wrap {
+	display: flex;
+	flex-direction: column;
+	margin:auto;
+}
+
+.main {
+	flex: 0;
+	display:flex;
+}
+
+footer, header {
+	padding:10px;
+}
+
+.sidebar {
+	flex:0 0 300px;
+	/*padding:10px;*/
+	order: 1;
+}
+
+.content{
+	/*padding:10px;*/
+	flex: 0;
+}
+
+@media screen and (max-width:1024px){
+	.sidebar{flex: 1;}
+	.main {flex-direction:column;}	
+}
+
+header.head {
+	border-bottom: solid 1px rgba(0,0,0,0.24) 
+}

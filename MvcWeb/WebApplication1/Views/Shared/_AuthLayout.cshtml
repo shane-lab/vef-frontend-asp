@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Video Embedded Feedback</title>
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.2/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/materialize/css/materialize.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/authlayout.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            @RenderBody()
+        </div>
+        <ul class="bg-bubbles">
+            @for (int i = 0; i < 10; i++)
+            {
+                <li></li>
+            }
+        </ul>
+    </div>
+</body>
+</html>
